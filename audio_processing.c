@@ -10,6 +10,8 @@
 #include <fft.h>
 #include <arm_math.h>
 
+#include "leds.h"
+
 
 
 //2 times FFT_SIZE because these arrays contain complex numbers (real + imaginary)
@@ -35,13 +37,16 @@ static float micFront_output[FFT_SIZE];
 #define FREQ_RIGHT_H		(FREQ_RIGHT+1)
 #define FREQ_BACKWARD_L		(FREQ_BACKWARD-1)
 #define FREQ_BACKWARD_H		(FREQ_BACKWARD+1)
-
+#define ACTIVATE_LED 1
 /*
 *	Simple function used to detect the highest value in a buffer
 *	and to execute a motor command depending on it
 */
 void sound_remote(float* data){
 	float max_norm = MIN_VALUE_THRESHOLD;
+
+	clear_leds();
+
 	int16_t max_norm_index = -1; 
 
 	//search for the highest peak
@@ -56,27 +61,31 @@ void sound_remote(float* data){
 	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
 		left_motor_set_speed(600);
 		right_motor_set_speed(600);
+		set_led(LED1,ACTIVATE_LED);
 	}
 	//turn left
 	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
 		left_motor_set_speed(-600);
 		right_motor_set_speed(600);
+		set_led(LED7,ACTIVATE_LED);
 	}
 	//turn right
 	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
 		left_motor_set_speed(600);
 		right_motor_set_speed(-600);
+		set_led(LED3,ACTIVATE_LED);
 	}
 	//go backward
 	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
 		left_motor_set_speed(-600);
 		right_motor_set_speed(-600);
+		set_led(LED5,ACTIVATE_LED);
 	}
 	else{
 		left_motor_set_speed(0);
 		right_motor_set_speed(0);
 	}
-	
+
 }
 
 /*
@@ -103,7 +112,7 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	//loop to fill the buffers
 	for(uint16_t i = 0 ; i < num_samples ; i+=4){
 			//i=+4 car data = [micRight1, micLeft1, micBack1, micFront1, micRight2, etc...]
-			// sinon il faudrait changer le driver (d'après Iacopo)
+			// sinon il faudrait changer le driver (d'aprÃ¨s Iacopo)
 
 		//construct an array of complex numbers. Put 0 to the imaginary part
 		micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
