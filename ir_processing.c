@@ -84,10 +84,10 @@ void epuck_move(int direction){
 		else{
 			left_motor_set_speed(0);
 			right_motor_set_speed(0);
-			set_led(LED1,ACTIVATE_LED);
-			set_led(LED3,ACTIVATE_LED);
-			set_led(LED5,ACTIVATE_LED);
-			set_led(LED7,ACTIVATE_LED);
+//			set_led(LED1,ACTIVATE_LED);
+//			set_led(LED3,ACTIVATE_LED);
+//			set_led(LED5,ACTIVATE_LED);
+//			set_led(LED7,ACTIVATE_LED);
 		}
 
 }
