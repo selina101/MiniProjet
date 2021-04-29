@@ -50,14 +50,14 @@ static void timer12_start(void){									//????????????? permet de mesurer tps e
     gptStartContinuous(&GPTD12, 0xFFFF);
 }
 
-void delay(int n)
-{
-	int new_n = 4*n;
-	while(new_n--)
-	{
-		asm("nop");
-	}
-}
+//void delay(int n)
+//{
+//	int new_n = 4*n;
+//	while(new_n--)
+//	{
+//		asm("nop");
+//	}
+//}
 
 int main(void)
 {
@@ -83,17 +83,17 @@ int main(void)
     //it calls the callback given in parameter when samples are ready
     mic_start(&processAudioData);
 
-    int cal_val=0;
+//    int cal_val=0;
 
     /* Infinite loop. */
     while (1) {
 
-    	cal_val = get_calibrated_prox(0);
-
-    	chprintf((BaseSequentialStream *)&SDU1, "%Cal_Val=%d \r\n", cal_val);
-    	//SDU1 on met port 8 pour le port du stm32fxxx et ensuite cliquer sur open et non pas change
-    	delay(1000000);
-    	//les valeurs commencent à 8cm et à 3 cm on est à 100 à ~2cm on est vers 500?
+//    	cal_val = get_calibrated_prox(0);
+//
+//    	chprintf((BaseSequentialStream *)&SDU1, "%Cal_Val=%d \r\n", cal_val);
+//    	//SDU1 on met port 8 pour le port du stm32fxxx et ensuite cliquer sur open et non pas change
+//    	delay(1000000);
+//    	//les valeurs commencent Ã  8cm et Ã  3 cm on est Ã  100 Ã  ~2cm on est vers 500?
 
     }
 }
