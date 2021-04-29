@@ -12,11 +12,16 @@
 #include <audio/microphone.h>
 #include <sensors/proximity.h>
 
+#include "camera/dcmi_camera.h"
+#include <camera.h>
+#include "leds.h"
+
 #include <audio_processing.h>
 #include <fft.h>
 #include <arm_math.h>
 
 messagebus_t bus;
+
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
@@ -50,14 +55,14 @@ static void timer12_start(void){									//????????????? permet de mesurer tps e
     gptStartContinuous(&GPTD12, 0xFFFF);
 }
 
-//void delay(int n)
-//{
-//	int new_n = 4*n;
-//	while(new_n--)
-//	{
-//		asm("nop");
-//	}
-//}
+void delay(int n)
+{
+	int new_n = 4*n;
+	while(new_n--)
+	{
+		asm("nop");
+	}
+}
 
 int main(void)
 {
@@ -83,14 +88,35 @@ int main(void)
     //it calls the callback given in parameter when samples are ready
     mic_start(&processAudioData);
 
-//    int cal_val=0;
+    //start camera
+	dcmi_start();
+	po8030_start();
+
+	int valeur_int=0;
 
     /* Infinite loop. */
     while (1) {
+    	clear_leds();
+    	valeur_int = detect_color();
 
-//    	cal_val = get_calibrated_prox(0);
+    	if (valeur_int == RED){
+    		set_led(LED1,1);
+    		set_led(LED3,1);
+    	}
+    	else if (valeur_int == GREEN){
+    	    set_led(LED5,1);
+    	    set_led(LED7,1);
+    	 }
+    	else {
+        	set_led(LED1,1);
+    		set_led(LED3,1);
+    		set_led(LED5,1);
+    		set_led(LED7,1);
+    	}
+
+
 //
-//    	chprintf((BaseSequentialStream *)&SDU1, "%Cal_Val=%d \r\n", cal_val);
+//    	chprintf((BaseSequentialStream *)&SDU1, "%R=%d \r\n", valeur_int);
 //    	//SDU1 on met port 8 pour le port du stm32fxxx et ensuite cliquer sur open et non pas change
 //    	delay(1000000);
 //    	//les valeurs commencent à 8cm et à 3 cm on est à 100 à ~2cm on est vers 500?
