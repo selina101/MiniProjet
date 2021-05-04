@@ -93,7 +93,7 @@ int main(void)
     	chprintf((BaseSequentialStream *)&SDU1, "%Cal_Val=%d \r\n", cal_val);
     	//SDU1 on met port 8 pour le port du stm32fxxx et ensuite cliquer sur open et non pas change
     	delay(1000000);
-    	//les valeurs commencent à 8cm et à 3 cm on est à 100 à ~2cm on est vers 500?
+    	//les valeurs commencent Ã  8cm et Ã  3 cm on est Ã  100 Ã  ~2cm on est vers 500?
 
     }
 }
@@ -105,3 +105,26 @@ void __stack_chk_fail(void)
 {
     chSysHalt("Stack smashing detected");
 }
+
+///////////////////////////////// toutes les infos pour melody
+
+//le include
+#include "audio/play_melody.h"
+
+//la variable qu'on utilise
+uint16_t melody_state = 0, melody_counter = 0;
+
+//la fonction
+melody_counter++;
+				if(melody_counter == 2000) {
+					melody_counter = 0;
+					melody_state = (melody_state+1)%NB_SONGS;
+					playMelody(melody_state, ML_SIMPLE_PLAY, NULL);
+				}
+
+//test audio
+//ici MARIO = 3 --> on le trouve dans play_melody.h (tester 12)
+playMelody(MARIO, ML_SIMPLE_PLAY, NULL);
+
+//initialise le peripherique
+playMelodyStart();
