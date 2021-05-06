@@ -4,14 +4,14 @@
 #include <usbcfg.h>
 #include <chprintf.h>
 
-#include <motors.h>
+//#include <motors.h>
 #include <audio/microphone.h>
 #include <audio_processing.h>
 #include <fft.h>
 #include <arm_math.h>
+#include <ir_processing.h>
 
-#include "leds.h"
-
+#include "selector.h"
 
 
 //2 times FFT_SIZE because these arrays contain complex numbers (real + imaginary)
@@ -22,6 +22,9 @@ static float micFront_output[FFT_SIZE];
 
 #define MIN_VALUE_THRESHOLD	10000 
 
+
+// frequency = position*15.625 (resolution - explination in TP5 page 6)
+
 #define MIN_FREQ		10	//we don't analyze before this index to not use resources for nothing
 #define FREQ_FORWARD	16	//250Hz
 #define FREQ_LEFT		19	//296Hz
@@ -29,7 +32,7 @@ static float micFront_output[FFT_SIZE];
 #define FREQ_BACKWARD	26	//406Hz
 #define MAX_FREQ		30	//we don't analyze after this index to not use resources for nothing
 
-#define FREQ_FORWARD_L		(FREQ_FORWARD-1)
+#define FREQ_FORWARD_L		(FREQ_FORWARD-1) 	//
 #define FREQ_FORWARD_H		(FREQ_FORWARD+1)
 #define FREQ_LEFT_L			(FREQ_LEFT-1)
 #define FREQ_LEFT_H			(FREQ_LEFT+1)
@@ -37,15 +40,16 @@ static float micFront_output[FFT_SIZE];
 #define FREQ_RIGHT_H		(FREQ_RIGHT+1)
 #define FREQ_BACKWARD_L		(FREQ_BACKWARD-1)
 #define FREQ_BACKWARD_H		(FREQ_BACKWARD+1)
-#define ACTIVATE_LED 1
+
 /*
 *	Simple function used to detect the highest value in a buffer
 *	and to execute a motor command depending on it
 */
-void sound_remote(float* data){
+
+void direction_detection(float* data){ 						//Previously sound_remote
 	float max_norm = MIN_VALUE_THRESHOLD;
 
-	clear_leds();
+	int select=get_selector();
 
 	int16_t max_norm_index = -1; 
 
@@ -57,33 +61,30 @@ void sound_remote(float* data){
 		}
 	}
 
-	//go forward
-	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-		left_motor_set_speed(600);
-		right_motor_set_speed(600);
-		set_led(LED1,ACTIVATE_LED);
-	}
-	//turn left
-	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-		left_motor_set_speed(-600);
-		right_motor_set_speed(600);
-		set_led(LED7,ACTIVATE_LED);
-	}
-	//turn right
-	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-		left_motor_set_speed(600);
-		right_motor_set_speed(-600);
-		set_led(LED3,ACTIVATE_LED);
-	}
-	//go backward
-	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-		left_motor_set_speed(-600);
-		right_motor_set_speed(-600);
-		set_led(LED5,ACTIVATE_LED);
+	if(select<7 && select>0){
+		//go forward
+		if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
+			ok_to_move(FORWARDS);
+		}
+		//turn left
+		else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
+			ok_to_move(LEFT);
+		}
+		//turn right
+		else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
+			ok_to_move(RIGHT);
+		}
+		//go backward
+		else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
+			ok_to_move(BACK);
+		}
+		//no sound
+		else{
+			ok_to_move(STOP);
+		}
 	}
 	else{
-		left_motor_set_speed(0);
-		right_motor_set_speed(0);
+		 e_puck_follow();
 	}
 
 }
@@ -148,6 +149,6 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 
 		nb_samples = 0;
 
-		sound_remote(micFront_output);
+		direction_detection(micFront_output);
 	}
 }
