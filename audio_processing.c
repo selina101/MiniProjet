@@ -59,19 +59,19 @@ void direction_detection(float* data){ 						//Previously sound_remote
 
 	//go forward
 	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-		ok_to_move(FORWARDS);
+		ok_to_move(STOP);
 	}
 	//turn left
 	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-		ok_to_move(LEFT);
+		ok_to_move(STOP);
 	}
 	//turn right
 	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-		ok_to_move(RIGHT);
+		ok_to_move(STOP);
 	}
 	//go backward
 	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-		ok_to_move(BACK);
+		ok_to_move(STOP);
 	}
 	//no sound
 	else{
@@ -143,4 +143,3 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		direction_detection(micFront_output);
 	}
 }
-
