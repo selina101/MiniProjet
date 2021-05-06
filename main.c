@@ -12,14 +12,24 @@
 #include <audio/microphone.h>
 #include <sensors/proximity.h>
 
+#include "camera/dcmi_camera.h"
+#include <camera.h>
+#include "leds.h"
+#include "spi_comm.h"
+
+#include "audio/play_melody.h"
+#include "audio/audio_thread.h"
+
 #include <audio_processing.h>
 #include <fft.h>
 #include <arm_math.h>
 
+#include <ir_processing.h>
+
 messagebus_t bus;
+
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
-
 
 
 static void serial_start(void)
@@ -65,6 +75,7 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
+	spi_comm_start();
 
     //starts the serial communication
     serial_start();
@@ -83,17 +94,16 @@ int main(void)
     //it calls the callback given in parameter when samples are ready
     mic_start(&processAudioData);
 
-    int cal_val=0;
-
     /* Infinite loop. */
+
     while (1) {
 
-    	cal_val = get_calibrated_prox(0);
-
-    	chprintf((BaseSequentialStream *)&SDU1, "%Cal_Val=%d \r\n", cal_val);
-    	//SDU1 on met port 8 pour le port du stm32fxxx et ensuite cliquer sur open et non pas change
-    	delay(1000000);
-    	//les valeurs commencent à 8cm et à 3 cm on est à 100 à ~2cm on est vers 500?
+//    	e_puck_follow();
+//    	set_rgb_led(LED2,10, 10, 0);
+//    	set_rgb_led(LED4,0,40,40);
+//    	set_rgb_led(LED6,10,10,0);
+//    	set_rgb_led(LED8,10,10,0);
+		delay(10000);
 
     }
 }
