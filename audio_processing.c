@@ -48,7 +48,6 @@ static float micFront_output[FFT_SIZE];
 
 void direction_detection(float* data){ 						//Previously sound_remote
 	float max_norm = MIN_VALUE_THRESHOLD;
-
 	int select=get_selector();
 
 	int16_t max_norm_index = -1; 
@@ -61,7 +60,8 @@ void direction_detection(float* data){ 						//Previously sound_remote
 		}
 	}
 
-	if(select<7 && select>0){
+	if(select<8){
+
 		//go forward
 		if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
 			ok_to_move(FORWARDS);
