@@ -13,12 +13,10 @@
 #include <sensors/proximity.h>
 
 #include "camera/dcmi_camera.h"
+#include "camera/po8030.h"
 #include <camera.h>
 #include "leds.h"
 #include "spi_comm.h"
-
-#include "audio/play_melody.h"
-#include "audio/audio_thread.h"
 
 #include <audio_processing.h>
 #include <fft.h>
@@ -90,20 +88,18 @@ int main(void)
     proximity_start(); // ce qui lance le thread du ir
     calibrate_ir();
 
+    dcmi_start();
+    po8030_start();
+    po8030_set_awb(0);
+
+
+
     //starts the microphones processing thread. --> thread is defined in e-puck library
     //it calls the callback given in parameter when samples are ready
     mic_start(&processAudioData);
 
-    /* Infinite loop. */
-
-    while (1) {
-
-//    	e_puck_follow();
-//    	set_rgb_led(LED2,10, 10, 0);
-//    	set_rgb_led(LED4,0,40,40);
-//    	set_rgb_led(LED6,10,10,0);
-//    	set_rgb_led(LED8,10,10,0);
-		delay(10000);
+        /* Infinite loop. */
+        while (1) {
 
     }
 }
