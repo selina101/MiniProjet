@@ -10,6 +10,7 @@
 #include <ir_processing.h>
 
 #include "leds.h"
+#include "spi_comm.h"
 #include <audio_processing.h>
 #include <ir_processing.h>
 
@@ -19,7 +20,8 @@
 #define NUM_SENSORS 8
 #define SEUIL_IR_STUCK 100
 #define IR_STOP 40
-
+#define RGB_YELLOW 0
+#define RGB_BLUE 1
 
 
 ///   a jouter
@@ -28,17 +30,23 @@
 
 
 
-void toggle_led_stuck(void){
-	set_led(LED1,ACTIVATE_LED);
-	set_led(LED3,ACTIVATE_LED);
-	set_led(LED5,ACTIVATE_LED);
-	set_led(LED7,ACTIVATE_LED);
+void rgb_color(int color){
 
-	for(int i=0 ; i<10000;i++)
-	{
-		asm("nop");
+	if(color == RGB_YELLOW ){
+    		set_rgb_led(LED2,10,10,0);
+    		set_rgb_led(LED4,10,10,0);
+    		set_rgb_led(LED6,10,10,0);
+    		set_rgb_led(LED8,10,10,0);
 	}
-	clear_leds();
+
+	else if(color== RGB_BLUE){
+		set_rgb_led(LED2,0,10,10);
+		set_rgb_led(LED4,0,10,10);
+		set_rgb_led(LED6,0,10,10);
+		set_rgb_led(LED8,0,10,10);
+	}
+
+
 }
 
 void epuck_move(int direction){
@@ -47,10 +55,12 @@ void epuck_move(int direction){
 	 * if no obstacle detected by IR sensor
 	 */
 	clear_leds();
+//	int colour=0;
 	if(direction == FORWARDS){
 		left_motor_set_speed(600);
 		right_motor_set_speed(600);
 		set_led(LED1,ACTIVATE_LED);
+		rgb_color(RGB_YELLOW);
 		}
 
 	//turn left
@@ -58,6 +68,7 @@ void epuck_move(int direction){
 			left_motor_set_speed(-600);
 			right_motor_set_speed(600);
 			set_led(LED7,ACTIVATE_LED);
+			rgb_color(RGB_YELLOW);
 		}
 
 		//turn right
@@ -65,6 +76,7 @@ void epuck_move(int direction){
 			left_motor_set_speed(600);
 			right_motor_set_speed(-600);
 			set_led(LED3,ACTIVATE_LED);
+			rgb_color(RGB_YELLOW);
 		}
 
 	//go backward
@@ -72,25 +84,52 @@ void epuck_move(int direction){
 			left_motor_set_speed(-600);
 			right_motor_set_speed(-600);
 			set_led(LED5,ACTIVATE_LED);
+			rgb_color(RGB_YELLOW);
 		}
 
 		//help I'm stuck!
 		else if(direction == STUCK) {
-			clear_leds();
-//			for(int i=0 ; i<100;i++)		//boucle d'attente pour se debloquer
-//				{
-				toggle_led_stuck();
+			rgb_color(RGB_YELLOW);
+//			colour=detect_color();
+//			if (colour==RED){
+//					set_led(LED1,ACTIVATE_LED);
 //				}
-				left_motor_set_speed(0);
-				right_motor_set_speed(0);
+//				else if (colour== GREEN){
+//					set_led(LED3,ACTIVATE_LED);
+//				}
+//				else if (colour==BLUE){
+//					set_led(LED5,ACTIVATE_LED);
+//				}
+//				else{
+//					set_led(LED7,ACTIVATE_LED);
+//				}
 
-			for(int i=0 ; i<100;i++)		//boucle d'attente pour se debloquer
-			{
-				toggle_led_stuck();
-			}
+				left_motor_set_speed(300);
+				right_motor_set_speed(-300);
+
+				for(int i=0 ; i<45;i++)		//boucle d'attente pour se debloquer
+				{
+					set_led(LED1,ACTIVATE_LED);
+					set_led(LED3,ACTIVATE_LED);
+					set_led(LED5,ACTIVATE_LED);
+					set_led(LED7,ACTIVATE_LED);
+
+					for(int j=0 ; j<1000000;j++)
+					{
+						asm("nop");
+					}
+
+					clear_leds();
+					for(int k=0 ; k<1000000;k++) //10000
+					{
+						asm("nop");
+					}
+				}
+
 		}
 	//no direction --> stop
 		else{
+			rgb_color(RGB_YELLOW);
 			left_motor_set_speed(0);
 			right_motor_set_speed(0);
 			set_led(LED1,ACTIVATE_LED);
@@ -150,8 +189,20 @@ void ok_to_move(int direction){
 		case STOP:
 			epuck_move(STOP);
 			break;
-}
+	}
 
+//	if (colour==RED){
+//		set_led(LED1,ACTIVATE_LED);
+//	}
+//	else if (colour== GREEN){
+//		set_led(LED3,ACTIVATE_LED);
+//	}
+//	else if (colour==BLUE){
+//		set_led(LED5,ACTIVATE_LED);
+//	}
+//	else{
+//		set_led(LED7,ACTIVATE_LED);
+//	}
 }
 
 
@@ -172,10 +223,10 @@ void e_puck_follow(void){
 		}
 	}
 
-	chprintf((BaseSequentialStream *)&SDU1, "max value =%d, index=%d \r\n\n", max_value, max_sensor);
+//	chprintf((BaseSequentialStream *)&SDU1, "max value =%d, index=%d \r\n\n", max_value, max_sensor);
 
 	clear_leds();
-
+	rgb_color(RGB_BLUE);
 	switch(max_sensor){
 	case -1 :				//tous les sensors sont à zéros
 		speed_right=0;
@@ -185,20 +236,28 @@ void e_puck_follow(void){
 		if(prox_values[0] < IR_STOP){	//mais il est aussi > 5 -->trop loin
 			speed_right=300;
 			speed_left=300;
+			set_led(LED1,ACTIVATE_LED);
+
 		}
 		else if(prox_values[0] > (IR_STOP +30)){
 			speed_right=-300;
 			speed_left=-300;
+			set_led(LED5,ACTIVATE_LED);
 		}
 		else{
 			speed_right=0;
 			speed_left=0;
+			set_led(LED1,ACTIVATE_LED);
+			set_led(LED3,ACTIVATE_LED);
+			set_led(LED5,ACTIVATE_LED);
+			set_led(LED7,ACTIVATE_LED);
 		}
 		break;
 
 	case 1:						//un peu à droite --> tourne
 		speed_right=-300;
 		speed_left=300;
+		set_led(LED3,ACTIVATE_LED);
 		break;
 
 	case 2:
@@ -206,10 +265,15 @@ void e_puck_follow(void){
 		{
 			speed_right=-300;
 			speed_left=300;
+			set_led(LED3,ACTIVATE_LED);
 		}
 		else{
 			speed_right=0;
 			speed_left=0;
+			set_led(LED1,ACTIVATE_LED);
+			set_led(LED3,ACTIVATE_LED);
+			set_led(LED5,ACTIVATE_LED);
+			set_led(LED7,ACTIVATE_LED);
 		}
 		break;
 
@@ -217,30 +281,42 @@ void e_puck_follow(void){
 		if(prox_values[5]>20){
 			speed_right=300;
 			speed_left=-300;
+			set_led(LED7,ACTIVATE_LED);
 		}
 		else{
 			speed_right=0;
 			speed_left=0;
+			set_led(LED1,ACTIVATE_LED);
+			set_led(LED3,ACTIVATE_LED);
+			set_led(LED5,ACTIVATE_LED);
+			set_led(LED7,ACTIVATE_LED);
 		}
 		break;
 
 	case 6:						//un peu à gauche --> tourne
 		speed_right=300;
 		speed_left=-300;
+		set_led(LED7,ACTIVATE_LED);
 		break;
 
 	case 7:					//IR7 est la valeur max - mm chose avant gauche
 			if(prox_values[7] < IR_STOP){	//mais il est aussi > 5 -->trop loin
 				speed_right=300;
 				speed_left=300;
+				set_led(LED1,ACTIVATE_LED);
 			}
 			else if(prox_values[7] > (IR_STOP +30)){
 				speed_right=-300;
 				speed_left=-300;
+				set_led(LED5,ACTIVATE_LED);
 			}
 			else{
 				speed_right=0;
 				speed_left=0;
+				set_led(LED1,ACTIVATE_LED);
+				set_led(LED3,ACTIVATE_LED);
+				set_led(LED5,ACTIVATE_LED);
+				set_led(LED7,ACTIVATE_LED);
 			}
 			break;
 
