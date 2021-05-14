@@ -3,8 +3,6 @@
 #include <main.h>
 #include <usbcfg.h>
 #include <chprintf.h>
-
-//#include <motors.h>
 #include <audio/microphone.h>
 #include <audio_processing.h>
 #include <fft.h>
@@ -21,9 +19,9 @@ static float micFront_cmplx_input[2 * FFT_SIZE];
 static float micFront_output[FFT_SIZE];
 
 #define MIN_VALUE_THRESHOLD	10000 
+#define SELECT_LIMIT 8
 
-
-// frequency = position*15.625 (resolution - explination in TP5 page 6)
+// frequency = position*15.625 (resolution - explanation in TP5 page 6)
 
 #define MIN_FREQ		10	//we don't analyze before this index to not use resources for nothing
 #define FREQ_FORWARD	16	//250Hz
@@ -41,26 +39,27 @@ static float micFront_output[FFT_SIZE];
 #define FREQ_BACKWARD_L		(FREQ_BACKWARD-1)
 #define FREQ_BACKWARD_H		(FREQ_BACKWARD+1)
 
+
 /*
 *	Simple function used to detect the highest value in a buffer
 *	and to execute a motor command depending on it
 */
 
-void direction_detection(float* data){ 						//Previously sound_remote
+void direction_detection(float* data){
 	float max_norm = MIN_VALUE_THRESHOLD;
 	int select=get_selector();
 
 	int16_t max_norm_index = -1; 
 
-	//search for the highest peak
-	for(uint16_t i = MIN_FREQ ; i <= MAX_FREQ ; i++){
-		if(data[i] > max_norm){
-			max_norm = data[i];
-			max_norm_index = i;
-		}
-	}
+	if(select<SELECT_LIMIT){
 
-	if(select<8){
+		//search for the highest peak
+		for(uint16_t i = MIN_FREQ ; i <= MAX_FREQ ; i++){
+			if(data[i] > max_norm){
+				max_norm = data[i];
+				max_norm_index = i;
+			}
+		}
 
 		//go forward
 		if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
