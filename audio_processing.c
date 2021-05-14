@@ -112,7 +112,6 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	//loop to fill the buffers
 	for(uint16_t i = 0 ; i < num_samples ; i+=4){
 			//i=+4 car data = [micRight1, micLeft1, micBack1, micFront1, micRight2, etc...]
-			// sinon il faudrait changer le driver (d'après Iacopo)
 
 		//construct an array of complex numbers. Put 0 to the imaginary part
 		micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
