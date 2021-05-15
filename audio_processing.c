@@ -39,6 +39,9 @@ static float micFront_output[FFT_SIZE];
 #define FREQ_BACKWARD_L		(FREQ_BACKWARD-1)
 #define FREQ_BACKWARD_H		(FREQ_BACKWARD+1)
 
+//#define NORM_MAX 160000
+
+
 
 /*
 *	Simple function used to detect the highest value in a buffer
@@ -47,43 +50,39 @@ static float micFront_output[FFT_SIZE];
 
 void direction_detection(float* data){
 	float max_norm = MIN_VALUE_THRESHOLD;
-	int select=get_selector();
-
+//	int amp_max =0;
 	int16_t max_norm_index = -1; 
 
-	if(select<SELECT_LIMIT){
-
-		//search for the highest peak
-		for(uint16_t i = MIN_FREQ ; i <= MAX_FREQ ; i++){
-			if(data[i] > max_norm){
-				max_norm = data[i];
-				max_norm_index = i;
-			}
-		}
-
-		//go forward
-		if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-			ok_to_move(FORWARDS);
-		}
-		//turn left
-		else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-			ok_to_move(LEFT);
-		}
-		//turn right
-		else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-			ok_to_move(RIGHT);
-		}
-		//go backward
-		else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-			ok_to_move(BACK);
-		}
-		//no sound
-		else{
-			ok_to_move(STOP);
+	//search for the highest peak
+	for(uint16_t i = MIN_FREQ ; i <= MAX_FREQ ; i++){
+		if(data[i] > max_norm){
+			max_norm = data[i];
+			max_norm_index = i;
 		}
 	}
+//	chprintf((BaseSequentialStream *)&SDU1, "%R=%f \r\n", max_norm);
+
+//	amp_max=(int)max_norm/NORM_MAX *100;
+
+	//go forward
+	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
+		ok_to_move(FORWARDS);
+	}
+	//turn left
+	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
+		ok_to_move(LEFT);
+	}
+	//turn right
+	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
+		ok_to_move(RIGHT);
+	}
+	//go backward
+	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
+		ok_to_move(BACK);
+	}
+	//no sound
 	else{
-		 e_puck_follow();
+		ok_to_move(STOP);
 	}
 
 }
@@ -99,6 +98,12 @@ void direction_detection(float* data){
 */
 void processAudioData(int16_t *data, uint16_t num_samples){
 
+	//if follow mode - skip sound analysis
+	int select=get_selector();
+	if(select>SELECT_LIMIT){
+		e_puck_follow();
+	}
+
 	/*
 	*
 	*	We get 160 samples per mic every 10ms
@@ -106,47 +111,48 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	*	1024 samples, then we compute the FFTs.
 	*
 	*/
+	else {
+		static uint16_t nb_samples = 0;
 
-	static uint16_t nb_samples = 0;
+		//loop to fill the buffers
+		for(uint16_t i = 0 ; i < num_samples ; i+=4){
+				//i=+4 car data = [micRight1, micLeft1, micBack1, micFront1, micRight2, etc...]
 
-	//loop to fill the buffers
-	for(uint16_t i = 0 ; i < num_samples ; i+=4){
-			//i=+4 car data = [micRight1, micLeft1, micBack1, micFront1, micRight2, etc...]
+			//construct an array of complex numbers. Put 0 to the imaginary part
+			micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
+			nb_samples++;
+			micFront_cmplx_input[nb_samples] = 0;
+			nb_samples++;
 
-		//construct an array of complex numbers. Put 0 to the imaginary part
-		micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
-		nb_samples++;
-		micFront_cmplx_input[nb_samples] = 0;
-		nb_samples++;
-
-		//stop when buffer is full
-		if(nb_samples >= (2 * FFT_SIZE)){
-			break;
+			//stop when buffer is full
+			if(nb_samples >= (2 * FFT_SIZE)){
+				break;
+			}
 		}
-	}
 
-	if(nb_samples >= (2 * FFT_SIZE)){	//if buffer is full --> FFT
-		/*	FFT proccessing
-		*
-		*	This FFT function stores the results in the input buffer given.
-		*	This is an "In Place" function. 
-		*/
+		if(nb_samples >= (2 * FFT_SIZE)){	//if buffer is full --> FFT
+			/*	FFT proccessing
+			*
+			*	This FFT function stores the results in the input buffer given.
+			*	This is an "In Place" function.
+			*/
 
-		doFFT_optimized(FFT_SIZE, micFront_cmplx_input);
+			doFFT_optimized(FFT_SIZE, micFront_cmplx_input);
 
 
-		/*	Magnitude processing
-		*
-		*	Computes the magnitude of the complex numbers and
-		*	stores them in a buffer of FFT_SIZE because it only contains
-		*	real numbers.
-		*
-		*/
+			/*	Magnitude processing
+			*
+			*	Computes the magnitude of the complex numbers and
+			*	stores them in a buffer of FFT_SIZE because it only contains
+			*	real numbers.
+			*
+			*/
 
-		arm_cmplx_mag_f32(micFront_cmplx_input, micFront_output, FFT_SIZE);
+			arm_cmplx_mag_f32(micFront_cmplx_input, micFront_output, FFT_SIZE);
 
-		nb_samples = 0;
+			nb_samples = 0;
 
-		direction_detection(micFront_output);
+			direction_detection(micFront_output);
+		}
 	}
 }
