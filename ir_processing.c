@@ -14,7 +14,6 @@
 #include <audio_processing.h>
 #include <ir_processing.h>
 
-
 #define ACTIVATE_LED 1
 #define NUM_SENSORS 8
 #define SEUIL_IR_STUCK 100
@@ -27,6 +26,30 @@
 #define SPEED_SLOW 300
 #define SPEED_STOP 0
 #define SEUIL_IR 20
+
+//int speed_R=0;
+//int speed_L=0;
+
+void set_motor_speed(int desired_speed_R, int desired_speed_L){
+
+    int diff_L=0;
+    int diff_R=0;
+    static int speed_R=0;
+    static int speed_L=0;
+
+    diff_L = (desired_speed_L - speed_L)/10;
+    diff_R = (desired_speed_R - speed_R)/10;
+
+    for(int i=0; i<10; i++){
+
+    	speed_L+= diff_L;
+    	speed_R+= diff_R;
+    	right_motor_set_speed(speed_R);
+    	left_motor_set_speed(speed_L);
+    }
+
+}
+
 
 void rgb_color(int color){
 
@@ -57,32 +80,34 @@ void epuck_move(int direction){
 
 	clear_leds();
 	if(direction == FORWARDS){
-		left_motor_set_speed(SPEED_FAST);
-		right_motor_set_speed(SPEED_FAST);
+		//left_motor_set_speed(SPEED_FAST);
+		//right_motor_set_speed(SPEED_FAST);
+		set_motor_speed(SPEED_FAST,SPEED_FAST);
 		set_led(LED1,ACTIVATE_LED);
 		rgb_color(RGB_YELLOW);
 		}
 
 	//turn left
 		else if(direction == LEFT){
-			left_motor_set_speed(-SPEED_FAST);
-			right_motor_set_speed(SPEED_FAST);
+			//left_motor_set_speed(-SPEED_FAST);
+			//right_motor_set_speed(SPEED_FAST);
+			set_motor_speed(SPEED_FAST,-SPEED_FAST);
 			set_led(LED7,ACTIVATE_LED);
 			rgb_color(RGB_YELLOW);
 		}
 
 		//turn right
 		else if(direction == RIGHT){
-			left_motor_set_speed(SPEED_FAST);
-			right_motor_set_speed(-SPEED_FAST);
+			//left_motor_set_speed(SPEED_FAST);
+			//right_motor_set_speed(-SPEED_FAST);
+			set_motor_speed(-SPEED_FAST,SPEED_FAST);
 			set_led(LED3,ACTIVATE_LED);
 			rgb_color(RGB_YELLOW);
 		}
 
 	//go backward
 		else if( direction == BACK){
-			left_motor_set_speed(-SPEED_FAST);
-			right_motor_set_speed(-SPEED_FAST);
+			set_motor_speed(-SPEED_FAST,-SPEED_FAST);
 			set_led(LED5,ACTIVATE_LED);
 			rgb_color(RGB_YELLOW);
 		}
@@ -92,8 +117,9 @@ void epuck_move(int direction){
 
 			rgb_color(RGB_YELLOW);
 
-			left_motor_set_speed(SPEED_SLOW);
-			right_motor_set_speed(-SPEED_SLOW);
+//			left_motor_set_speed(SPEED_SLOW);
+//			right_motor_set_speed(-SPEED_SLOW);
+			set_motor_speed(-SPEED_SLOW,SPEED_SLOW);
 
 			for(int i=0 ; i<45;i++)		//boucle d'attente pour se debloquer
 			{
@@ -119,8 +145,9 @@ void epuck_move(int direction){
 	//no direction --> stop
 		else{
 			rgb_color(RGB_YELLOW);
-			left_motor_set_speed(SPEED_STOP);
-			right_motor_set_speed(SPEED_STOP);
+			//left_motor_set_speed(SPEED_STOP);
+			//right_motor_set_speed(SPEED_STOP);
+			set_motor_speed(SPEED_STOP,SPEED_STOP);
 			set_led(LED1,ACTIVATE_LED);
 			set_led(LED3,ACTIVATE_LED);
 			set_led(LED5,ACTIVATE_LED);
@@ -129,7 +156,7 @@ void epuck_move(int direction){
 
 }
 
-void ok_to_move(int direction){
+void ok_to_move(int direction){//, int max_amp){
 	/*
 	 * Checks if obstacle in direction we want to move
 	 */
@@ -302,9 +329,9 @@ void e_puck_follow(void){
 		break;
 	}
 
-
-	left_motor_set_speed(speed_left);
-	right_motor_set_speed(speed_right);
+	set_motor_speed(speed_right,speed_left);
+//	left_motor_set_speed(speed_left);
+//	right_motor_set_speed(speed_right);
 
 	for(int i=0 ; i<10000;i++)
 	{
