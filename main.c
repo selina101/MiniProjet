@@ -12,9 +12,6 @@
 #include <audio/microphone.h>
 #include <sensors/proximity.h>
 
-#include "camera/dcmi_camera.h"
-#include "camera/po8030.h"
-#include <camera.h>
 #include "leds.h"
 #include "spi_comm.h"
 
@@ -22,7 +19,6 @@
 #include <fft.h>
 #include <arm_math.h>
 
-#include <ir_processing.h>
 
 messagebus_t bus;
 
@@ -42,64 +38,38 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
-static void timer12_start(void){									//????????????? permet de mesurer tps execution
-    //General Purpose Timer configuration   
-    //timer 12 is a 16 bit timer so we can measure time
-    //to about 65ms with a 1Mhz counter
-    static const GPTConfig gpt12cfg = {
-        1000000,        /* 1MHz timer clock in order to measure uS.*/
-        NULL,           /* Timer callback.*/
-        0,
-        0
-    };
-
-    gptStart(&GPTD12, &gpt12cfg);
-    //let the timer count to max value
-    gptStartContinuous(&GPTD12, 0xFFFF);
-}
-
-void delay(int n)
-{
-	int new_n = 4*n;
-	while(new_n--)
-	{
-		asm("nop");
-	}
-}
 
 int main(void)
 {
 
     halInit();
     chSysInit();
-    mpu_init();
 	spi_comm_start();
 
     //starts the serial communication
     serial_start();
+
     //starts the USB communication
     usb_start();
-    //starts timer 12
-    timer12_start();
+
     //inits the motors
     motors_init();
+
     //init ir
     messagebus_init(&bus, &bus_lock, &bus_condvar);
-    proximity_start(); // ce qui lance le thread du ir
+    proximity_start();
     calibrate_ir();
-
-    dcmi_start();
-    po8030_start();
-    po8030_set_awb(0);
-
 
 
     //starts the microphones processing thread. --> thread is defined in e-puck library
     //it calls the callback given in parameter when samples are ready
     mic_start(&processAudioData);
 
-        /* Infinite loop. */
-        while (1) {
+
+    /* Infinite loop. */
+    while (1) {
+
+
 
     }
 }

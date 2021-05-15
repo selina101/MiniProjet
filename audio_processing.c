@@ -3,8 +3,6 @@
 #include <main.h>
 #include <usbcfg.h>
 #include <chprintf.h>
-
-//#include <motors.h>
 #include <audio/microphone.h>
 #include <audio_processing.h>
 #include <fft.h>
@@ -21,9 +19,9 @@ static float micFront_cmplx_input[2 * FFT_SIZE];
 static float micFront_output[FFT_SIZE];
 
 #define MIN_VALUE_THRESHOLD	10000 
+#define SELECT_LIMIT 8
 
-
-// frequency = position*15.625 (resolution - explination in TP5 page 6)
+// frequency = position*15.625 (resolution - explanation in TP5 page 6)
 
 #define MIN_FREQ		10	//we don't analyze before this index to not use resources for nothing
 #define FREQ_FORWARD	16	//250Hz
@@ -41,15 +39,18 @@ static float micFront_output[FFT_SIZE];
 #define FREQ_BACKWARD_L		(FREQ_BACKWARD-1)
 #define FREQ_BACKWARD_H		(FREQ_BACKWARD+1)
 
+//#define NORM_MAX 160000
+
+
+
 /*
 *	Simple function used to detect the highest value in a buffer
 *	and to execute a motor command depending on it
 */
 
-void direction_detection(float* data){ 						//Previously sound_remote
+void direction_detection(float* data){
 	float max_norm = MIN_VALUE_THRESHOLD;
-	int select=get_selector();
-
+//	int amp_max =0;
 	int16_t max_norm_index = -1; 
 
 	//search for the highest peak
@@ -59,32 +60,29 @@ void direction_detection(float* data){ 						//Previously sound_remote
 			max_norm_index = i;
 		}
 	}
+//	chprintf((BaseSequentialStream *)&SDU1, "%R=%f \r\n", max_norm);
 
-	if(select<8){
+//	amp_max=(int)max_norm/NORM_MAX *100;
 
-		//go forward
-		if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-			ok_to_move(FORWARDS);
-		}
-		//turn left
-		else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-			ok_to_move(LEFT);
-		}
-		//turn right
-		else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-			ok_to_move(RIGHT);
-		}
-		//go backward
-		else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-			ok_to_move(BACK);
-		}
-		//no sound
-		else{
-			ok_to_move(STOP);
-		}
+	//go forward
+	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
+		ok_to_move(FORWARDS);
 	}
+	//turn left
+	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
+		ok_to_move(LEFT);
+	}
+	//turn right
+	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
+		ok_to_move(RIGHT);
+	}
+	//go backward
+	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
+		ok_to_move(BACK);
+	}
+	//no sound
 	else{
-		 e_puck_follow();
+		ok_to_move(STOP);
 	}
 
 }
@@ -100,6 +98,12 @@ void direction_detection(float* data){ 						//Previously sound_remote
 */
 void processAudioData(int16_t *data, uint16_t num_samples){
 
+	//if follow mode - skip sound analysis
+	int select=get_selector();
+	if(select>SELECT_LIMIT){
+		e_puck_follow();
+	}
+
 	/*
 	*
 	*	We get 160 samples per mic every 10ms
@@ -107,48 +111,48 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	*	1024 samples, then we compute the FFTs.
 	*
 	*/
+	else {
+		static uint16_t nb_samples = 0;
 
-	static uint16_t nb_samples = 0;
+		//loop to fill the buffers
+		for(uint16_t i = 0 ; i < num_samples ; i+=4){
+				//i=+4 car data = [micRight1, micLeft1, micBack1, micFront1, micRight2, etc...]
 
-	//loop to fill the buffers
-	for(uint16_t i = 0 ; i < num_samples ; i+=4){
-			//i=+4 car data = [micRight1, micLeft1, micBack1, micFront1, micRight2, etc...]
-			// sinon il faudrait changer le driver (d'après Iacopo)
+			//construct an array of complex numbers. Put 0 to the imaginary part
+			micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
+			nb_samples++;
+			micFront_cmplx_input[nb_samples] = 0;
+			nb_samples++;
 
-		//construct an array of complex numbers. Put 0 to the imaginary part
-		micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
-		nb_samples++;
-		micFront_cmplx_input[nb_samples] = 0;
-		nb_samples++;
-
-		//stop when buffer is full
-		if(nb_samples >= (2 * FFT_SIZE)){
-			break;
+			//stop when buffer is full
+			if(nb_samples >= (2 * FFT_SIZE)){
+				break;
+			}
 		}
-	}
 
-	if(nb_samples >= (2 * FFT_SIZE)){	//if buffer is full --> FFT
-		/*	FFT proccessing
-		*
-		*	This FFT function stores the results in the input buffer given.
-		*	This is an "In Place" function. 
-		*/
+		if(nb_samples >= (2 * FFT_SIZE)){	//if buffer is full --> FFT
+			/*	FFT proccessing
+			*
+			*	This FFT function stores the results in the input buffer given.
+			*	This is an "In Place" function.
+			*/
 
-		doFFT_optimized(FFT_SIZE, micFront_cmplx_input);
+			doFFT_optimized(FFT_SIZE, micFront_cmplx_input);
 
 
-		/*	Magnitude processing
-		*
-		*	Computes the magnitude of the complex numbers and
-		*	stores them in a buffer of FFT_SIZE because it only contains
-		*	real numbers.
-		*
-		*/
+			/*	Magnitude processing
+			*
+			*	Computes the magnitude of the complex numbers and
+			*	stores them in a buffer of FFT_SIZE because it only contains
+			*	real numbers.
+			*
+			*/
 
-		arm_cmplx_mag_f32(micFront_cmplx_input, micFront_output, FFT_SIZE);
+			arm_cmplx_mag_f32(micFront_cmplx_input, micFront_output, FFT_SIZE);
 
-		nb_samples = 0;
+			nb_samples = 0;
 
-		direction_detection(micFront_output);
+			direction_detection(micFront_output);
+		}
 	}
 }

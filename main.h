@@ -13,8 +13,6 @@ extern "C" {
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
 
-//extern messagebus_topic_t bus_ir;
-
 extern parameter_namespace_t parameter_root;
 
 
