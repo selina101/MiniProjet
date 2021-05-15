@@ -54,7 +54,7 @@ int main(void)
 
     //inits the motors
     motors_init();
-    
+
     //init ir
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     proximity_start();
@@ -70,7 +70,7 @@ int main(void)
     while (1) {
 
 
-    	
+
     }
 }
 
