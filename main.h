@@ -16,8 +16,6 @@ extern messagebus_t bus;
 extern parameter_namespace_t parameter_root;
 
 
-void delay(int n);
-
 #ifdef __cplusplus
 }
 #endif
