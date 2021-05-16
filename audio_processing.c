@@ -8,7 +8,6 @@
 #include <fft.h>
 #include <arm_math.h>
 #include <ir_processing.h>
-
 #include "selector.h"
 
 
@@ -21,7 +20,7 @@ static float micFront_output[FFT_SIZE];
 #define MIN_VALUE_THRESHOLD	10000 
 #define SELECT_LIMIT 8
 
-// frequency = position*15.625 (resolution - explanation in TP5 page 6)
+// frequency = position*15.625 (resolution)
 
 #define MIN_FREQ		10	//we don't analyze before this index to not use resources for nothing
 #define FREQ_FORWARD	16	//250Hz
@@ -39,9 +38,6 @@ static float micFront_output[FFT_SIZE];
 #define FREQ_BACKWARD_L		(FREQ_BACKWARD-1)
 #define FREQ_BACKWARD_H		(FREQ_BACKWARD+1)
 
-//#define NORM_MAX 160000
-
-
 
 /*
 *	Simple function used to detect the highest value in a buffer
@@ -50,7 +46,6 @@ static float micFront_output[FFT_SIZE];
 
 void direction_detection(float* data){
 	float max_norm = MIN_VALUE_THRESHOLD;
-//	int amp_max =0;
 	int16_t max_norm_index = -1; 
 
 	//search for the highest peak
@@ -60,9 +55,6 @@ void direction_detection(float* data){
 			max_norm_index = i;
 		}
 	}
-//	chprintf((BaseSequentialStream *)&SDU1, "%R=%f \r\n", max_norm);
-
-//	amp_max=(int)max_norm/NORM_MAX *100;
 
 	//go forward
 	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
