@@ -7,12 +7,6 @@
 #include <arm_math.h>
 #include <arm_const_structs.h>
 
-/* Define complex multiplication and its conjugate */
-#define  rmul(x,y)      (x.real * y.real - x.imag * y.imag)
-#define  imul(x,y)      (x.imag * y.real + x.real * y.imag)
-#define rcmul(x,y)      (x.real * y.real + x.imag * y.imag)
-#define icmul(x,y)      (x.imag * y.real - x.real * y.imag)
-
 
 /*
 *	Wrapper to call a very optimized fft function provided by ARM
