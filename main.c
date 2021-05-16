@@ -11,8 +11,6 @@
 #include <motors.h>
 #include <audio/microphone.h>
 #include <sensors/proximity.h>
-
-#include "leds.h"
 #include "spi_comm.h"
 
 #include <audio_processing.h>
@@ -44,6 +42,7 @@ int main(void)
 
     halInit();
     chSysInit();
+    //start comm led RGB
 	spi_comm_start();
 
     //starts the serial communication
@@ -61,15 +60,13 @@ int main(void)
     calibrate_ir();
 
 
-    //starts the microphones processing thread. --> thread is defined in e-puck library
+    //starts the microphones processing thread.
     //it calls the callback given in parameter when samples are ready
     mic_start(&processAudioData);
 
 
     /* Infinite loop. */
     while (1) {
-
-
 
     }
 }
